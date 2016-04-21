@@ -80,6 +80,7 @@ function Tesselate(selector) {
     };
 
     this_.addPointsIfNeeded = function() {
+        return;
         for(var i = 0; i < this_.points.length; i++) {
             var point = this_.points[i];
             var nextPoint = this_.points[(i + 1) % this_.points.length];
@@ -153,7 +154,7 @@ function Tesselate(selector) {
         this_.style.draw();
     };
 
-    this_._drawPolygon = function(x, y, transformCallback, className) {
+    this_._drawPolygon = function(x, y, transformCallback, className, addlTransform) {
         var pointStrings = [];
         for(var i = 0; i < this_.points.length; i++) {
             var point = this_.points[i];
@@ -164,9 +165,9 @@ function Tesselate(selector) {
                 point.x+','+point.y
             );
         }
-
-        return '<g transform="translate('+x+', '+y+')">'+
+        return '<g transform="translate('+x+', '+y+')'+(addlTransform ? ' '+addlTransform : '')+'">'+
             '<polygon points="'+pointStrings.join(' ')+'" '+(className?'class="'+className+'"':'')+'/>'+
+            '<line x1="0" y1="0" x2="0" y2="-80" style="stroke:rgb(150,150,150);stroke-width:1" />'+
         '</g>';
     };
 
@@ -302,10 +303,58 @@ function Tesselate(selector) {
 
                 shapesGroup.html(svgString);
             }
+        },
+        rotate: {
+            initPoints: function() {
+                this_.points[0].boundPoints = [this_.points[4], this_.points[8]]
+                this_.points[0].bindRotation = {}
+                // this_.points[0].bindRotation[this_.points[4].tag] = 240;
+                // this_.points[0].bindRotation[this_.points[8].tag] = 120;
+                this_.points[0].bindRotation[this_.points[4].tag] = 120;
+                this_.points[0].bindRotation[this_.points[8].tag] = 240;
+            },
+            setupAddedPoint(point, prevPoint, nextPoint) {
+                // nothing needed
+            },
+            updateDependentPoints: function(point) {
+                for(var i = 0; i < point.boundPoints.length; i++) {
+                    var boundPoint = point.boundPoints[i];
+                    var xChange = 0;
+                    var yChange = 0;
+                    var directMovementX = point.x - point.originalX;
+                    var directMovementY = point.y - point.originalY;
+                    var xRadianRotation = ((360 - point.bindRotation[boundPoint.tag]) / 360.0) * (Math.PI * 2);
+                    var yRadianRotation = (point.bindRotation[boundPoint.tag] / 360.0) * (Math.PI * 2);
+                    //1 / c = a / h
+                    xChange += Math.cos(xRadianRotation) * directMovementX;
+                    yChange += Math.sin(xRadianRotation) * directMovementX;
+                    xChange += Math.sin(yRadianRotation) * directMovementY;
+                    yChange += Math.cos(yRadianRotation) * directMovementY;
+                    boundPoint.x = boundPoint.originalX + xChange;
+                    boundPoint.y = boundPoint.originalY + yChange;
+                }
+            },
+            draw: function() {
+                var shapesGroup = this_.element.find('.shapes');
+                svgString = '';
+                for(var i = -4; i <= 4; i++) {
+                    for(var j = -8; j <= 8; j++) {
+                        svgString += this_._drawPolygon(
+                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
+                            this_.verticalSpacing * 2 * j + this_.height / 2,
+                            undefined,
+                            undefined,
+                            'rotate('+((j % 3) * 120)+')'
+                        );
+                    }
+                }
+
+                shapesGroup.html(svgString);
+            }
         }
     };
 
-    this_.init(this_.tesselationStyles.reflectAndGlide);
+    this_.init(this_.tesselationStyles.rotate);
 
     return this_;
 };

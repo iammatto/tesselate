@@ -1,0 +1,24 @@
+#box {
+    border: 1px solid #666;
+    width: 800px;
+    height: 600px;
+    margin: 50px auto;
+}
+
+#box > svg {
+    width: 800px;
+    height: 600px;
+    position: absolute;
+}
+
+#box > svg polygon {
+    stroke: #000;
+    fill: #aaa;
+    opacity: .8;
+}
+
+#box > svg circle {
+    stroke: #000;
+    fill: #aca;
+    opacity: .6;
+}

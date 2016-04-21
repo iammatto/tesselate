@@ -308,10 +308,17 @@ function Tesselate(selector) {
             initPoints: function() {
                 this_.points[0].boundPoints = [this_.points[4], this_.points[8]]
                 this_.points[0].bindRotation = {}
-                // this_.points[0].bindRotation[this_.points[4].tag] = 240;
-                // this_.points[0].bindRotation[this_.points[8].tag] = 120;
                 this_.points[0].bindRotation[this_.points[4].tag] = 120;
                 this_.points[0].bindRotation[this_.points[8].tag] = 240;
+
+                this_.points[1].boundPoints = [this_.points[3]]
+                this_.points[1].bindRotation = {}
+                this_.points[1].bindRotation[this_.points[3].tag] = 120;
+
+                // this_.points[2].boundPoints = [this_.points[4], this_.points[8]]
+                this_.points[3].boundPoints = [this_.points[1]]
+                this_.points[3].bindRotation = {};
+                this_.points[3].bindRotation[this_.points[1].tag] = 240;
             },
             setupAddedPoint(point, prevPoint, nextPoint) {
                 // nothing needed
@@ -325,7 +332,6 @@ function Tesselate(selector) {
                     var directMovementY = point.y - point.originalY;
                     var xRadianRotation = ((360 - point.bindRotation[boundPoint.tag]) / 360.0) * (Math.PI * 2);
                     var yRadianRotation = (point.bindRotation[boundPoint.tag] / 360.0) * (Math.PI * 2);
-                    //1 / c = a / h
                     xChange += Math.cos(xRadianRotation) * directMovementX;
                     yChange += Math.sin(xRadianRotation) * directMovementX;
                     xChange += Math.sin(yRadianRotation) * directMovementY;

@@ -7,13 +7,32 @@
 
         <script type="text/javascript" src="tesselate.js"></script>
         <link rel="stylesheet" type="text/css" href="styles.css">
+        <script type="text/javascript">
+            $(document).ready(function() {
+                tesselate = Tesselate('#box');
+
+                $('#tesselation-types input').click(function() {
+                    tesselate.setStyle(this.value);
+                })
+            });
+        </script>
     </head>
     <body>
-        <div id="box">
-            <svg>
-                <g class="shapes"></g>
-                <g class="points"></g>
-            </svg>
-        </div>
+        <ul id="tesselation-types">
+            <li>
+                <input type="radio" name="type" value="translate" id="type-translate" checked="checked">
+                <label for="type-translate">Translate</label>
+            </li>
+            <li>
+                <input type="radio" name="type" value="reflect" id="type-reflect">
+                <label for="type-reflect">Reflect</label>
+            </li>
+            <li>
+                <input type="radio" name="type" value="rotate" id="type-rotate">
+                <label for="type-rotate">Rotate</label>
+            </li>
+        </ul>
+        <div class="clear"></div>
+        <div id="box"></div>
     </body>
 </html>

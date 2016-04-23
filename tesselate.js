@@ -1,4 +1,7 @@
 function Tesselate(selector, options) {
+    if (!options) {
+        options = {};
+    }
     this_ = this;
     this_.element = $(selector);
     this_.width = this_.element.width();
@@ -15,14 +18,15 @@ function Tesselate(selector, options) {
             styleName = 'translate'
         }
 
+        this_.element.html('<svg><g class="shapes"></g><g class="points"></g></svg>');
         this_.element.find('.points').attr('transform', 'translate('+(this_.width / 2)+', '+(this_.height / 2)+')');
+
         this_.setStyle(styleName);
-        this_.draw();
     };
 
     this_.setStyle = function(styleName) {
         this_.style = this_.tesselationStyles[styleName];
-
+        this_.element.find('.points').html('');
         this_.points = [];
         for(var i = 0; i < 6; i++) {
             var angle = i * 60;
@@ -43,6 +47,7 @@ function Tesselate(selector, options) {
         }
 
         this_.addPointsIfNeeded();
+        this_.draw();
     }
 
     this_.createPoint = function(x, y) {
@@ -416,9 +421,3 @@ function Tesselate(selector, options) {
 
     return this_;
 };
-
-$(document).ready(function() {
-    tesselate = Tesselate('#box', {
-        style: 'rotate'
-    });
-});

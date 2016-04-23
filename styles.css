@@ -2,7 +2,7 @@
     border: 1px solid #666;
     width: 800px;
     height: 600px;
-    margin: 50px auto;
+    margin: 30px auto;
 }
 
 #box > svg {
@@ -21,4 +21,21 @@
     stroke: #000;
     fill: #aca;
     opacity: .6;
+}
+
+#tesselation-types {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+    width: 800px;
+    margin: 50px auto;
+}
+
+#tesselation-types > li {
+    float: left;
+    margin-right: 50px;
+}
+
+.clear {
+    clear: both;
 }

@@ -20,30 +20,42 @@ function Tesselate(selector) {
         this_.points = [];
         for(var i = 0; i < 6; i++) {
             var angle = i * 60;
-            this_.points.push({
-                x: Math.cos(angle * (Math.PI / 180)) * this_.size,
-                y: Math.sin(angle * (Math.PI / 180)) * this_.size
-            });
+            this_.points.push(this_.createPoint(
+                Math.cos(angle * (Math.PI / 180)) * this_.size,
+                Math.sin(angle * (Math.PI / 180)) * this_.size
+            ));
         }
 
         for(var i = 0; i < this_.points.length; i = i + 2) {
             this_.addMiddlePoint(this_.points[i], i);
         }
 
+        this_.style.initPoints();
+
         for(var i = 0; i < this_.points.length; i++) {
             this_.bindPoint(this_.points[i]);
         }
 
-        this_.style.initPoints();
         this_.addPointsIfNeeded();
     };
 
-    this_.bindPoint = function(point) {
-        point.originalX = point.x;
-        point.originalY = point.y;
+    this_.createPoint = function(x, y) {
+        return {
+            x: x,
+            y: y,
+            originalX: x,
+            originalY: y,
+            tag: Math.floor(Math.random() * 1000000000).toString(16),
+            boundPoints: [],
+            movable: true
+        }
+    }
 
+    this_.bindPoint = function(point) {
+        if (!point.movable) {
+            return;
+        }
         var pointGroup = this_.element.find('.points');
-        point.tag = Math.floor(Math.random() * 1000000000).toString(16);
         pointGroup.html(
             pointGroup.html() +
             '<circle cx="'+point.x+'", cy="'+point.y+'" r="8" tag="'+point.tag+'"/>'
@@ -102,11 +114,10 @@ function Tesselate(selector) {
         if (!nextPoint) {
             nextPoint = this_.points[(pointIndex + 1) % this_.points.length];
         }
-        var newPoint = {
-            x: (point.x + nextPoint.x) / 2,
-            y: (point.y + nextPoint.y) / 2,
-            boundPoints: []
-        };
+        var newPoint = this_.createPoint(
+            (point.x + nextPoint.x) / 2,
+            (point.y + nextPoint.y) / 2
+        );
         this_.points.splice(pointIndex + 1, 0, newPoint)
         return newPoint;
     };
@@ -306,19 +317,26 @@ function Tesselate(selector) {
         },
         rotate: {
             initPoints: function() {
-                this_.points[0].boundPoints = [this_.points[4], this_.points[8]]
-                this_.points[0].bindRotation = {}
-                this_.points[0].bindRotation[this_.points[4].tag] = 120;
-                this_.points[0].bindRotation[this_.points[8].tag] = 240;
+                function getOffsetPoint(value) {
+                    return this_.points[value % 12];
+                }
+                for(var i = 0 ; i < 12; i=i+4) {
+                    getOffsetPoint(i+0).boundPoints = [getOffsetPoint(i+4), getOffsetPoint(i+8)];
+                    getOffsetPoint(i+0).bindRotation = {}
+                    getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+4).tag] = 120;
+                    getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+8).tag] = 240;
 
-                this_.points[1].boundPoints = [this_.points[3]]
-                this_.points[1].bindRotation = {}
-                this_.points[1].bindRotation[this_.points[3].tag] = 120;
+                    getOffsetPoint(i+1).boundPoints = [getOffsetPoint(i+3)];
+                    getOffsetPoint(i+1).bindRotation = {}
+                    getOffsetPoint(i+1).bindRotation[getOffsetPoint(i+3).tag] = 120;
 
-                // this_.points[2].boundPoints = [this_.points[4], this_.points[8]]
-                this_.points[3].boundPoints = [this_.points[1]]
-                this_.points[3].bindRotation = {};
-                this_.points[3].bindRotation[this_.points[1].tag] = 240;
+                    getOffsetPoint(i+2).movable = false;
+
+                    getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1)];
+                    getOffsetPoint(i+3).bindRotation = {};
+                    getOffsetPoint(i+3).bindRotation[getOffsetPoint(i+1).tag] = 240;
+
+                }
             },
             setupAddedPoint(point, prevPoint, nextPoint) {
                 // nothing needed

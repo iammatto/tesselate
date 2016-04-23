@@ -1,22 +1,28 @@
-function Tesselate(selector) {
+function Tesselate(selector, options) {
     this_ = this;
     this_.element = $(selector);
     this_.width = this_.element.width();
     this_.height = this_.element.height();
-    this_.size = 100;
+    this_.size = options.size || 100;
     this_.horizontalSpacing = Math.cos(Math.PI / 3) * this_.size / 2;
     this_.verticalSpacing = Math.sin(Math.PI / 3) * this_.size / 2;
     this_.points = [];
-    this_.maxEdgeDistance = 60;
+    this_.maxEdgeDistance = options.maxEdgeDistance || 60;
     this_.style = null
 
-    this_.init = function(style) {
-        if (!style) {
-            style = this_.tesselationStyles.translate
+    this_.init = function(styleName) {
+        if (!styleName || !this_.tesselationStyles[styleName]) {
+            styleName = 'translate'
         }
 
-        this_.style = style;
         this_.element.find('.points').attr('transform', 'translate('+(this_.width / 2)+', '+(this_.height / 2)+')');
+        this_.setStyle(styleName);
+        this_.draw();
+    };
+
+    this_.setStyle = function(styleName) {
+        this_.style = this_.tesselationStyles[styleName];
+
         this_.points = [];
         for(var i = 0; i < 6; i++) {
             var angle = i * 60;
@@ -37,7 +43,7 @@ function Tesselate(selector) {
         }
 
         this_.addPointsIfNeeded();
-    };
+    }
 
     this_.createPoint = function(x, y) {
         return {
@@ -92,7 +98,6 @@ function Tesselate(selector) {
     };
 
     this_.addPointsIfNeeded = function() {
-        return;
         for(var i = 0; i < this_.points.length; i++) {
             var point = this_.points[i];
             var nextPoint = this_.points[(i + 1) % this_.points.length];
@@ -178,7 +183,6 @@ function Tesselate(selector) {
         }
         return '<g transform="translate('+x+', '+y+')'+(addlTransform ? ' '+addlTransform : '')+'">'+
             '<polygon points="'+pointStrings.join(' ')+'" '+(className?'class="'+className+'"':'')+'/>'+
-            '<line x1="0" y1="0" x2="0" y2="-80" style="stroke:rgb(150,150,150);stroke-width:1" />'+
         '</g>';
     };
 
@@ -226,7 +230,7 @@ function Tesselate(selector) {
                 shapesGroup.html(svgString);
             }
         },
-        reflectAndGlide: {
+        reflect: {
             initPoints: function() {
                 for(var i = 0; i < this_.points.length; i = i + 1) {
                     var point = this_.points[i];
@@ -331,6 +335,9 @@ function Tesselate(selector) {
                     getOffsetPoint(i+1).bindRotation[getOffsetPoint(i+3).tag] = 120;
 
                     getOffsetPoint(i+2).movable = false;
+                    // used for dynamic point addition
+                    getOffsetPoint(i+2).boundPoints = [getOffsetPoint(i+2), getOffsetPoint(i+6), getOffsetPoint(i+10)];
+                    getOffsetPoint(i+2).bindRotation = {}
 
                     getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1)];
                     getOffsetPoint(i+3).bindRotation = {};
@@ -339,7 +346,34 @@ function Tesselate(selector) {
                 }
             },
             setupAddedPoint(point, prevPoint, nextPoint) {
-                // nothing needed
+                var prevRotations = [];
+                for(var key in prevPoint.bindRotation) {
+                    prevRotations.push(prevPoint.bindRotation[key])
+                }
+                var nextRotations = [];
+                for(var key in nextPoint.bindRotation) {
+                    nextRotations.push(nextPoint.bindRotation[key])
+                }
+
+                var rotation = 0;
+                if(prevRotations.length == 0) {
+                    rotation = nextRotations[0];
+                } else if(nextRotations.length == 0) {
+                    rotation = prevRotations[0];
+                } else {
+                    for(var i = 0; i < prevRotations.length; i++) {
+                        for(var j = 0; j < nextRotations.length; j++) {
+                            if(prevRotations[i] == nextRotations[j]) {
+                                rotation = prevRotations[i]
+                            }
+                        }
+                    }
+                }
+
+                point.bindRotation = {}
+                for(var i = 0; i < point.boundPoints.length; i++) {
+                    point.bindRotation[point.boundPoints[i].tag] = rotation;
+                }
             },
             updateDependentPoints: function(point) {
                 for(var i = 0; i < point.boundPoints.length; i++) {
@@ -378,12 +412,13 @@ function Tesselate(selector) {
         }
     };
 
-    this_.init(this_.tesselationStyles.rotate);
+    this_.init(options.style);
 
     return this_;
 };
 
 $(document).ready(function() {
-    tesselate = Tesselate('#box');
-    tesselate.draw();
+    tesselate = Tesselate('#box', {
+        style: 'rotate'
+    });
 });

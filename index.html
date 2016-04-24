@@ -6,14 +6,32 @@
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 
         <script type="text/javascript" src="tesselate.js"></script>
+        <script type="text/javascript" src="shape_diff.js"></script>
         <link rel="stylesheet" type="text/css" href="styles.css">
         <script type="text/javascript">
             $(document).ready(function() {
-                tesselate = Tesselate('#box');
+                var tesselate = Tesselate('#tesselation');
 
                 $('#tesselation-types input').click(function() {
                     tesselate.setStyle(this.value);
                 })
+
+                var diff = ShapeDiff('#diff');
+
+                var points1 = [
+                    [10, 10],
+                    [10, 100],
+                    [100, 100],
+                    [100, 10]
+                ];
+
+                var points2 = [
+                    [30, 10],
+                    [10, 100],
+                    [100, 100],
+                    [100, 10]
+                ];
+                diff.getDiff(points1, points2);
             });
         </script>
     </head>
@@ -33,6 +51,7 @@
             </li>
         </ul>
         <div class="clear"></div>
-        <div id="box"></div>
+        <div id="diff"></div>
+        <div id="tesselation"></div>
     </body>
 </html>

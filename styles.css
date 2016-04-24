@@ -1,23 +1,23 @@
-#box {
+#tesselation {
     border: 1px solid #666;
     width: 800px;
     height: 600px;
     margin: 30px auto;
 }
 
-#box > svg {
+#tesselation > svg {
     width: 800px;
     height: 600px;
     position: absolute;
 }
 
-#box > svg polygon {
+#tesselation > svg polygon {
     stroke: #000;
     fill: #aaa;
     opacity: .8;
 }
 
-#box > svg circle {
+#tesselation > svg circle {
     stroke: #000;
     fill: #aca;
     opacity: .6;
@@ -38,4 +38,11 @@
 
 .clear {
     clear: both;
+}
+
+#diff {
+    position: absolute;
+    right: 10px;
+    top: 99px;
+    border: 1px solid black;
 }

@@ -45,4 +45,5 @@
     right: 10px;
     top: 99px;
     border: 1px solid black;
+    z-index: 10;
 }

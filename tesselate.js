@@ -48,7 +48,18 @@ function Tesselate(selector, options) {
 
         this_.addPointsIfNeeded();
         this_.draw();
-    }
+        this_.onChange();
+    };
+
+    this_.onChange = function() {
+        if (options.onChange) {
+            var eventPoints = [];
+            for(var i = 0; i < this_.points.length; i++) {
+                eventPoints.push([this_.points[i].x, this_.points[i].y]);
+            }
+            options.onChange(eventPoints);
+        }
+    };
 
     this_.createPoint = function(x, y) {
         return {
@@ -60,7 +71,7 @@ function Tesselate(selector, options) {
             boundPoints: [],
             movable: true
         }
-    }
+    };
 
     this_.bindPoint = function(point) {
         if (!point.movable) {
@@ -75,6 +86,7 @@ function Tesselate(selector, options) {
         pointGroup.children('circle').draggable({
             stop: function() {
                 this_.addPointsIfNeeded();
+                this_.onChange();
             }
         }).bind('drag', function(event, ui) {
             var dragPoint = null;

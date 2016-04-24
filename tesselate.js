@@ -89,29 +89,40 @@ function Tesselate(selector, options) {
                 this_.onChange();
             }
         }).bind('drag', function(event, ui) {
-            var dragPoint = null;
-            for(var i = 0; i < this_.points.length; i++) {
-                if ($(event.target).attr('tag') == this_.points[i].tag) {
-                    dragPoint = this_.points[i];
-                }
-            }
             var newX = ui.position.left - this_.width / 2;
             var newY = ui.position.top - this_.height / 2;
-            event.target.setAttribute('cx', newX);
-            event.target.setAttribute('cy', newY);
-            dragPoint.x = newX;
-            dragPoint.y = newY;
-
-            this_.style.updateDependentPoints(dragPoint)
-
-            for(var i = 0; i < dragPoint.boundPoints.length; i++) {
-                var boundPoint = dragPoint.boundPoints[i];
-                var circle = $(event.target).siblings("[tag='"+boundPoint.tag+"']");
-                circle.attr('cx', boundPoint.x);
-                circle.attr('cy', boundPoint.y);
+            for(var i = 0; i < this_.points.length; i++) {
+                if ($(event.target).attr('tag') == this_.points[i].tag) {
+                    this_.setPointPosition(i, newX, newY, true);
+                }
             }
-            this_.draw();
         });
+    };
+
+    this_.setPointPosition = function(i, x, y, preventEvents) {
+        var point = this_.points[i];
+        if (!point.movable) {
+            return false;
+        }
+        var circle = this_.element.find("circle[tag='"+point.tag+"']");
+        circle.attr('cx', x);
+        circle.attr('cy', y);
+        point.x = x;
+        point.y = y;
+
+        this_.style.updateDependentPoints(point)
+
+        for(var i = 0; i < point.boundPoints.length; i++) {
+            var boundPoint = point.boundPoints[i];
+            var boundCircle = circle.siblings("[tag='"+boundPoint.tag+"']");
+            boundCircle.attr('cx', boundPoint.x);
+            boundCircle.attr('cy', boundPoint.y);
+        }
+        this_.draw();
+        if (!preventEvents) {
+            this_.addPointsIfNeeded();
+            this_.onChange();
+        }
     };
 
     this_.addPointsIfNeeded = function() {

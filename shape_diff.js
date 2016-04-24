@@ -23,7 +23,30 @@ function ShapeDiff(selector, options) {
         this_.drawShape(shape1, width, height);
         this_.drawShape(shape2, width, height);
 
+        var colorCounts = this_.getColorCounts();
+        var matchRatio = colorCounts.matched / (colorCounts.matched + colorCounts.unmatched);
+        return matchRatio
     };
+
+    this_.getColorCounts = function() {
+        var imageData = this_.context.getImageData(
+            10, 10,
+            this_.context.canvas.width - 20, this_.context.canvas.height - 20
+        );
+        var colorCounts = {
+            matched: 0,
+            unmatched: 0
+        };
+        for(var i = 0; i < imageData.data.length; i=i+3) {
+            var colorValue = imageData.data[i];
+            if(colorValue == 64) {
+                colorCounts.matched++;
+            } else if(colorValue == 128) {
+                colorCounts.unmatched++;
+            }
+        }
+        return colorCounts;
+    }
 
     this_.getShape = function(points) {
         var minX = points[0][0],

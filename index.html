@@ -53,9 +53,12 @@
                 function toggleMatching() {
                     if(matchingInterval) {
                         stopMatching();
+                        tesselate.points = JSON.parse(previousPointJson);
+                        tesselate.makeEditable();
                     } else {
                         matchingInterval = setInterval(updateRandomPoint, 20);
                         $('#matching-button').val('Stop Matching')
+                        tesselate.makeUneditable();
                     }
                 }
 

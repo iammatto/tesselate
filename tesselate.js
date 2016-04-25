@@ -11,7 +11,8 @@ function Tesselate(selector, options) {
     this_.verticalSpacing = Math.sin(Math.PI / 3) * this_.size / 2;
     this_.points = [];
     this_.maxEdgeDistance = options.maxEdgeDistance || 60;
-    this_.style = null
+    this_.style = null;
+    this_.editable = true;
 
     this_.init = function(styleName) {
         if (!styleName || !this_.tesselationStyles[styleName]) {
@@ -74,7 +75,7 @@ function Tesselate(selector, options) {
     };
 
     this_.bindPoint = function(point) {
-        if (!point.movable) {
+        if (!this_.editable || !point.movable) {
             return;
         }
         var pointGroup = this_.element.find('.points');
@@ -97,6 +98,17 @@ function Tesselate(selector, options) {
                 }
             }
         });
+    };
+
+    this_.makeUneditable = function() {
+        this_.editable = false;
+        this_.element.find('.points circle').remove();
+    };
+    this_.makeEditable = function() {
+        this_.editable = true;
+        for(var i = 0; i < this_.points.length; i++) {
+            this_.bindPoint(this_.points[i]);
+        }
     };
 
     this_.setPointPosition = function(i, x, y, preventEvents) {

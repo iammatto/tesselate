@@ -15,6 +15,7 @@
 
                 var currentScore = 0;
                 var previousPoint = {};
+                var matchingInterval = null;
 
                 var tesselate = Tesselate('#tesselation', {
                     onChange: function(points) {
@@ -34,10 +35,6 @@
                     style: 'rotate'
                 });
 
-                $('#tesselation-types input').click(function() {
-                    tesselate.setStyle(this.value);
-                });
-
                 function updateRandomPoint() {
                     var randomIndex = Math.floor(Math.random() * tesselate.points.length)
                     var point = tesselate.points[randomIndex];
@@ -54,7 +51,28 @@
                     );
                 }
 
-                setInterval(updateRandomPoint, 20);
+                function stopMatching() {
+                    clearInterval(matchingInterval);
+                    matchingInterval = null;
+                    $('#matching-button').val('Start Matching')
+                }
+
+                function toggleMatching() {
+                    if(matchingInterval !== null) {
+                        stopMatching();
+                    } else {
+                        matchingInterval = setInterval(updateRandomPoint, 50);
+                        $('#matching-button').val('Stop Matching')
+                    }
+                }
+
+                $('#tesselation-types input').click(function() {
+                    stopMatching();
+                    tesselate.setStyle(this.value);
+                });
+
+                $('#matching-button').click(toggleMatching)
+
             });
         </script>
     </head>
@@ -76,6 +94,7 @@
         <div class="clear"></div>
         <div id="diff">
             <div></div>
+            <input id="matching-button" type="button" value="Start Matching"></input>
             <span></span>
         </div>
         <div id="tesselation"></div>

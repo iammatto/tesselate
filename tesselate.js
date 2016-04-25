@@ -113,7 +113,7 @@ function Tesselate(selector, options) {
         this_.style.updateDependentPoints(point)
 
         for(var i = 0; i < point.boundPoints.length; i++) {
-            var boundPoint = point.boundPoints[i];
+            var boundPoint = this_.getPointByTag(point.boundPoints[i]);
             var boundCircle = circle.siblings("[tag='"+boundPoint.tag+"']");
             boundCircle.attr('cx', boundPoint.x);
             boundCircle.attr('cy', boundPoint.y);
@@ -137,7 +137,7 @@ function Tesselate(selector, options) {
                 var newPoint = this_.addMiddlePoint(point, i, nextPoint)
                 this_.bindPoint(newPoint);
                 var pairedPoint = this_.getPairedPoint(newPoint, point, nextPoint);
-                newPoint.boundPoints = [pairedPoint];
+                newPoint.boundPoints = [pairedPoint.tag];
                 this_.style.setupAddedPoint(newPoint, point, nextPoint);
             }
         }
@@ -160,10 +160,10 @@ function Tesselate(selector, options) {
         var prevBound = null;
         var nextBound = null;
         for(var i = 0; i < prevPoint.boundPoints.length; i++) {
-            prevBound = prevPoint.boundPoints[i];
+            prevBound = this_.getPointByTag(prevPoint.boundPoints[i]);
             var prevBoundIndex = this_.points.indexOf(prevBound);
             for(var j = 0; j < nextPoint.boundPoints.length; j++) {
-                nextBound = nextPoint.boundPoints[j];
+                nextBound = this_.getPointByTag(nextPoint.boundPoints[j]);
                 var nextBoundIndex = this_.points.indexOf(nextBound)
                 if (Math.abs(prevBoundIndex - nextBoundIndex) == 1) {
                     if (prevBoundIndex < nextBoundIndex) {
@@ -188,7 +188,7 @@ function Tesselate(selector, options) {
                 break;
             }
         }
-        pairedPoint.boundPoints = [newPoint];
+        pairedPoint.boundPoints = [newPoint.tag];
         this_.bindPoint(pairedPoint);
         this_.style.setupAddedPoint(pairedPoint, prevBound, nextBound);
         return pairedPoint;
@@ -214,6 +214,14 @@ function Tesselate(selector, options) {
         '</g>';
     };
 
+    this_.getPointByTag = function(tag) {
+        for(var i = 0; i < this_.points.length; i++) {
+            if(this_.points[i].tag == tag) {
+                return this_.points[i];
+            }
+        }
+    };
+
     this_.tesselationStyles = {
         translate: {
             initPoints: function() {
@@ -221,15 +229,15 @@ function Tesselate(selector, options) {
                     //corner points
                     var point = this_.points[i];
                     point.boundPoints = [
-                        this_.points[(i + 4) % this_.points.length],
-                        this_.points[(i + 8) % this_.points.length]
+                        this_.points[(i + 4) % this_.points.length].tag,
+                        this_.points[(i + 8) % this_.points.length].tag
                     ]
                 }
                 for(var i = 1; i < this_.points.length; i = i + 2) {
                     //mid point
                     var point = this_.points[i];
                     point.boundPoints = [
-                        this_.points[(i + 6) % this_.points.length],
+                        this_.points[(i + 6) % this_.points.length].tag,
                     ]
                 }
             },
@@ -238,7 +246,7 @@ function Tesselate(selector, options) {
             },
             updateDependentPoints: function(point) {
                 for(var i = 0; i < point.boundPoints.length; i++) {
-                    var boundPoint = point.boundPoints[i];
+                    var boundPoint = this_.getPointByTag(point.boundPoints[i]);
                     boundPoint.x = boundPoint.originalX + (point.x - point.originalX);
                     boundPoint.y = boundPoint.originalY + (point.y - point.originalY);
                 }
@@ -269,30 +277,30 @@ function Tesselate(selector, options) {
                     function getOffsetPoint(value) {
                         return this_.points[(value + offset) % 12];
                     }
-                    getOffsetPoint(0).boundPoints = [getOffsetPoint(2), getOffsetPoint(10)];
+                    getOffsetPoint(0).boundPoints = [getOffsetPoint(2).tag, getOffsetPoint(10).tag];
                     getOffsetPoint(0).bindTypes = {};
                     getOffsetPoint(0).bindTypes[getOffsetPoint(2).tag] = 'inverted';
                     getOffsetPoint(0).bindTypes[getOffsetPoint(10).tag] = 'inverted';
 
-                    getOffsetPoint(1).boundPoints = [getOffsetPoint(11)];
+                    getOffsetPoint(1).boundPoints = [getOffsetPoint(11).tag];
                     getOffsetPoint(1).bindTypes = {};
                     getOffsetPoint(1).bindTypes[getOffsetPoint(11).tag] = 'inverted';
 
-                    getOffsetPoint(2).boundPoints = [getOffsetPoint(0), getOffsetPoint(10)];
+                    getOffsetPoint(2).boundPoints = [getOffsetPoint(0).tag, getOffsetPoint(10).tag];
                     getOffsetPoint(2).bindTypes = {};
                     getOffsetPoint(2).bindTypes[getOffsetPoint(0).tag] = 'inverted';
                     getOffsetPoint(2).bindTypes[getOffsetPoint(10).tag] = 'standard';
 
-                    getOffsetPoint(3).boundPoints = [getOffsetPoint(9)];
+                    getOffsetPoint(3).boundPoints = [getOffsetPoint(9).tag];
                     getOffsetPoint(3).bindTypes = {};
                     getOffsetPoint(3).bindTypes[getOffsetPoint(9).tag] = 'standard';
 
-                    getOffsetPoint(4).boundPoints = [getOffsetPoint(6), getOffsetPoint(8)];
+                    getOffsetPoint(4).boundPoints = [getOffsetPoint(6).tag, getOffsetPoint(8).tag];
                     getOffsetPoint(4).bindTypes = {};
                     getOffsetPoint(4).bindTypes[getOffsetPoint(6).tag] = 'inverted';
                     getOffsetPoint(4).bindTypes[getOffsetPoint(8).tag] = 'standard';
 
-                    getOffsetPoint(5).boundPoints = [getOffsetPoint(7)];
+                    getOffsetPoint(5).boundPoints = [getOffsetPoint(7).tag];
                     getOffsetPoint(5).bindTypes = {};
                     getOffsetPoint(5).bindTypes[getOffsetPoint(7).tag] = 'inverted';
                 }
@@ -315,12 +323,12 @@ function Tesselate(selector, options) {
                 }
                 var bindType = (prevStandard && nextStandard) ? 'standard' : 'inverted';
                 for(var i = 0; i < point.boundPoints.length; i++) {
-                    point.bindTypes[point.boundPoints[i].tag] = bindType;
+                    point.bindTypes[point.boundPoints[i]] = bindType;
                 }
             },
             updateDependentPoints: function(point) {
                 for(var i = 0; i < point.boundPoints.length; i++) {
-                    var boundPoint = point.boundPoints[i];
+                    var boundPoint = this_.getPointByTag(point.boundPoints[i]);
                     boundPoint.x = boundPoint.originalX + (point.x - point.originalX) * (point.bindTypes[boundPoint.tag] == 'inverted' ? -1 : 1);
                     boundPoint.y = boundPoint.originalY + (point.y - point.originalY);
                 }
@@ -353,21 +361,21 @@ function Tesselate(selector, options) {
                     return this_.points[value % 12];
                 }
                 for(var i = 0 ; i < 12; i=i+4) {
-                    getOffsetPoint(i+0).boundPoints = [getOffsetPoint(i+4), getOffsetPoint(i+8)];
+                    getOffsetPoint(i+0).boundPoints = [getOffsetPoint(i+4).tag, getOffsetPoint(i+8).tag];
                     getOffsetPoint(i+0).bindRotation = {}
                     getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+4).tag] = 120;
                     getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+8).tag] = 240;
 
-                    getOffsetPoint(i+1).boundPoints = [getOffsetPoint(i+3)];
+                    getOffsetPoint(i+1).boundPoints = [getOffsetPoint(i+3).tag];
                     getOffsetPoint(i+1).bindRotation = {}
                     getOffsetPoint(i+1).bindRotation[getOffsetPoint(i+3).tag] = 120;
 
                     getOffsetPoint(i+2).movable = false;
                     // used for dynamic point addition
-                    getOffsetPoint(i+2).boundPoints = [getOffsetPoint(i+2), getOffsetPoint(i+6), getOffsetPoint(i+10)];
+                    getOffsetPoint(i+2).boundPoints = [getOffsetPoint(i+2).tag, getOffsetPoint(i+6).tag, getOffsetPoint(i+10).tag];
                     getOffsetPoint(i+2).bindRotation = {}
 
-                    getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1)];
+                    getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1).tag];
                     getOffsetPoint(i+3).bindRotation = {};
                     getOffsetPoint(i+3).bindRotation[getOffsetPoint(i+1).tag] = 240;
 
@@ -400,12 +408,12 @@ function Tesselate(selector, options) {
 
                 point.bindRotation = {}
                 for(var i = 0; i < point.boundPoints.length; i++) {
-                    point.bindRotation[point.boundPoints[i].tag] = rotation;
+                    point.bindRotation[point.boundPoints[i]] = rotation;
                 }
             },
             updateDependentPoints: function(point) {
                 for(var i = 0; i < point.boundPoints.length; i++) {
-                    var boundPoint = point.boundPoints[i];
+                    var boundPoint = this_.getPointByTag(point.boundPoints[i]);
                     var xChange = 0;
                     var yChange = 0;
                     var directMovementX = point.x - point.originalX;

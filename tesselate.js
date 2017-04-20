@@ -14,7 +14,7 @@ function Tesselate(selector, options) {
     this_.style = null;
     this_.editable = true;
 
-    this_.init = function(styleName) {
+    this_.init = function(styleName, shapeName) {
         if (!styleName || !this_.tesselationStyles[styleName]) {
             styleName = 'translate'
         }
@@ -22,26 +22,20 @@ function Tesselate(selector, options) {
         this_.element.html('<svg><g class="shapes"></g><g class="points"></g></svg>');
         this_.element.find('.points').attr('transform', 'translate('+(this_.width / 2)+', '+(this_.height / 2)+')');
 
-        this_.setStyle(styleName);
+        this_.setStyle(styleName, shapeName);
     };
 
-    this_.setStyle = function(styleName) {
+    this_.setStyle = function(styleName, shapeName) {
+        if (!shapeName) {
+            shapeName = 'hexagon';
+        }
         this_.style = this_.tesselationStyles[styleName];
+        this_.shape = this_.tesselationShapes[styleName][shapeName];
+        console.log('SAEHOUT', styleName, shapeName, this_.shape)
         this_.element.find('.points').html('');
         this_.points = [];
-        for(var i = 0; i < 6; i++) {
-            var angle = i * 60;
-            this_.points.push(this_.createPoint(
-                Math.cos(angle * (Math.PI / 180)) * this_.size,
-                Math.sin(angle * (Math.PI / 180)) * this_.size
-            ));
-        }
 
-        for(var i = 0; i < this_.points.length; i = i + 2) {
-            this_.addMiddlePoint(this_.points[i], i);
-        }
-
-        this_.style.initPoints();
+        this_.shape.init();
 
         for(var i = 0; i < this_.points.length; i++) {
             this_.bindPoint(this_.points[i]);
@@ -207,22 +201,22 @@ function Tesselate(selector, options) {
     };
 
     this_.draw = function() {
-        this_.style.draw();
+        this_.shape.draw();
     };
 
-    this_._drawPolygon = function(x, y, transformCallback, className, addlTransform) {
+    this_._drawPolygon = function(x, y, pointCallback, addlTransform) {
         var pointStrings = [];
         for(var i = 0; i < this_.points.length; i++) {
             var point = this_.points[i];
-            if (transformCallback) {
-                point = transformCallback(point);
+            if (pointCallback) {
+                point = pointCallback(point);
             }
             pointStrings.push(
                 point.x+','+point.y
             );
         }
         return '<g transform="translate('+x+', '+y+')'+(addlTransform ? ' '+addlTransform : '')+'">'+
-            '<polygon points="'+pointStrings.join(' ')+'" '+(className?'class="'+className+'"':'')+'/>'+
+            '<polygon points="'+pointStrings.join(' ')+'"/>'+
         '</g>';
     };
 
@@ -234,25 +228,218 @@ function Tesselate(selector, options) {
         }
     };
 
-    this_.tesselationStyles = {
-        translate: {
-            initPoints: function() {
-                for(var i = 0; i < this_.points.length; i = i + 2) {
-                    //corner points
-                    var point = this_.points[i];
-                    point.boundPoints = [
-                        this_.points[(i + 4) % this_.points.length].tag,
-                        this_.points[(i + 8) % this_.points.length].tag
-                    ]
+    this_.shapes = {
+        hexagon: {
+            init: function() {
+                for(var i = 0; i < 6; i++) {
+                    var angle = i * 60;
+                    this_.points.push(this_.createPoint(
+                        Math.cos(angle * (Math.PI / 180)) * this_.size,
+                        Math.sin(angle * (Math.PI / 180)) * this_.size
+                    ));
                 }
-                for(var i = 1; i < this_.points.length; i = i + 2) {
-                    //mid point
-                    var point = this_.points[i];
-                    point.boundPoints = [
-                        this_.points[(i + 6) % this_.points.length].tag,
-                    ]
+
+                for(var i = 0; i < this_.points.length; i = i + 2) {
+                    this_.addMiddlePoint(this_.points[i], i);
                 }
             },
+            draw: function(pointCallback, transformCallback) {
+                var shapesGroup = this_.element.find('.shapes');
+                svgString = '';
+                for(var i = -4; i <= 4; i++) {
+                    for(var j = -8; j <= 8; j++) {
+                        svgString += this_._drawPolygon(
+                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
+                            this_.verticalSpacing * 2 * j + this_.height / 2,
+                            pointCallback ? pointCallback(i, j) : undefined,
+                            transformCallback ? transformCallback(i, j) : undefined
+                        );
+                    }
+                }
+
+                shapesGroup.html(svgString);
+            }
+        },
+        square: {
+            init: function() {
+                this_.points = [
+                    this_.createPoint(-this_.size, -this_.size),
+                    this_.createPoint(-this_.size, this_.size),
+                    this_.createPoint(this_.size, this_.size),
+                    this_.createPoint(this_.size, -this_.size)
+                ];
+
+                for(var i = 0; i < this_.points.length; i = i + 2) {
+                    this_.addMiddlePoint(this_.points[i], i);
+                }
+            },
+            draw: function() {
+                var shapesGroup = this_.element.find('.shapes');
+                svgString = '';
+                for(var i = -4; i <= 4; i++) {
+                    for(var j = -4; j <= 4; j++) {
+                        svgString += this_._drawPolygon(
+                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
+                            this_.verticalSpacing * 2 * j + this_.height / 2,
+                            pointCallback ? pointCallback(i, j) : undefined,
+                            transformCallback ? transformCallback(i, j) : undefined
+                        );
+                    }
+                }
+
+                shapesGroup.html(svgString);
+            }
+        }
+    };
+
+    this_.tesselationShapes = {
+        translate: {
+            hexagon: {
+                init: function() {
+                    this_.shapes.hexagon.init();
+
+                    for(var i = 0; i < this_.points.length; i = i + 2) {
+                        //corner points
+                        var point = this_.points[i];
+                        point.boundPoints = [
+                            this_.points[(i + 4) % this_.points.length].tag,
+                            this_.points[(i + 8) % this_.points.length].tag
+                        ]
+                    }
+                    for(var i = 1; i < this_.points.length; i = i + 2) {
+                        //mid point
+                        var point = this_.points[i];
+                        point.boundPoints = [
+                            this_.points[(i + 6) % this_.points.length].tag,
+                        ]
+                    }
+                },
+                draw: this_.shapes.hexagon.draw
+            },
+            square: {
+                init: function() {
+                    this_.shapes.square.init();
+                    for(var i = 0; i < this_.points.length; i = i + 2) {
+                        //corner points
+                        var point = this_.points[i];
+                        point.boundPoints = [
+                            this_.points[(i + 2) % this_.points.length].tag,
+                            this_.points[(i + 4) % this_.points.length].tag,
+                            this_.points[(i + 4) % this_.points.length].tag
+                        ];
+                    }
+
+                    for(var i = 1; i < this_.points.length; i = i + 2) {
+                        //mid point
+                        var point = this_.points[i];
+                        point.boundPoints = [
+                            this_.points[(i + 4) % this_.points.length].tag,
+                        ];
+                    }
+                },
+                draw: this_.shapes.square.draw
+            }
+        },
+        reflect: {
+            hexagon: {
+                init: function() {
+                    this_.shapes.hexagon.init();
+
+                    for(var i = 0; i < this_.points.length; i = i + 1) {
+                        var point = this_.points[i];
+                        point.boundPoints = []
+                    }
+
+                    function setupHalf(offset) {
+                        function getOffsetPoint(value) {
+                            return this_.points[(value + offset) % 12];
+                        }
+                        getOffsetPoint(0).boundPoints = [getOffsetPoint(2).tag, getOffsetPoint(10).tag];
+                        getOffsetPoint(0).bindTypes = {};
+                        getOffsetPoint(0).bindTypes[getOffsetPoint(2).tag] = 'inverted';
+                        getOffsetPoint(0).bindTypes[getOffsetPoint(10).tag] = 'inverted';
+
+                        getOffsetPoint(1).boundPoints = [getOffsetPoint(11).tag];
+                        getOffsetPoint(1).bindTypes = {};
+                        getOffsetPoint(1).bindTypes[getOffsetPoint(11).tag] = 'inverted';
+
+                        getOffsetPoint(2).boundPoints = [getOffsetPoint(0).tag, getOffsetPoint(10).tag];
+                        getOffsetPoint(2).bindTypes = {};
+                        getOffsetPoint(2).bindTypes[getOffsetPoint(0).tag] = 'inverted';
+                        getOffsetPoint(2).bindTypes[getOffsetPoint(10).tag] = 'standard';
+
+                        getOffsetPoint(3).boundPoints = [getOffsetPoint(9).tag];
+                        getOffsetPoint(3).bindTypes = {};
+                        getOffsetPoint(3).bindTypes[getOffsetPoint(9).tag] = 'standard';
+
+                        getOffsetPoint(4).boundPoints = [getOffsetPoint(6).tag, getOffsetPoint(8).tag];
+                        getOffsetPoint(4).bindTypes = {};
+                        getOffsetPoint(4).bindTypes[getOffsetPoint(6).tag] = 'inverted';
+                        getOffsetPoint(4).bindTypes[getOffsetPoint(8).tag] = 'standard';
+
+                        getOffsetPoint(5).boundPoints = [getOffsetPoint(7).tag];
+                        getOffsetPoint(5).bindTypes = {};
+                        getOffsetPoint(5).bindTypes[getOffsetPoint(7).tag] = 'inverted';
+                    }
+                    setupHalf(0);
+                    setupHalf(6);
+                },
+                draw: function() {
+                    var reversalCallback = function(i, j) {
+                        if (j % 2) {
+                            return function(point) {
+                                return {
+                                    x: -point.x,
+                                    y: point.y
+                                };
+                            }
+                        }
+                    }
+                    this_.shapes.hexagon.draw(reversalCallback)
+                }
+            },
+        },
+        rotate: {
+            hexagon: {
+                init: function() {
+                    this_.shapes.hexagon.init();
+
+                    function getOffsetPoint(value) {
+                        return this_.points[value % 12];
+                    }
+                    for(var i = 0 ; i < 12; i=i+4) {
+                        getOffsetPoint(i+0).boundPoints = [getOffsetPoint(i+4).tag, getOffsetPoint(i+8).tag];
+                        getOffsetPoint(i+0).bindRotation = {}
+                        getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+4).tag] = 120;
+                        getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+8).tag] = 240;
+
+                        getOffsetPoint(i+1).boundPoints = [getOffsetPoint(i+3).tag];
+                        getOffsetPoint(i+1).bindRotation = {}
+                        getOffsetPoint(i+1).bindRotation[getOffsetPoint(i+3).tag] = 120;
+
+                        getOffsetPoint(i+2).movable = false;
+                        // used for dynamic point addition
+                        getOffsetPoint(i+2).boundPoints = [getOffsetPoint(i+2).tag, getOffsetPoint(i+6).tag, getOffsetPoint(i+10).tag];
+                        getOffsetPoint(i+2).bindRotation = {}
+
+                        getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1).tag];
+                        getOffsetPoint(i+3).bindRotation = {};
+                        getOffsetPoint(i+3).bindRotation[getOffsetPoint(i+1).tag] = 240;
+
+                    }
+                },
+                draw: function() {
+                    var transformCallback = function(i, j) {
+                        return 'rotate('+((j % 3) * 120)+')'
+                    }
+                    this_.shapes.hexagon.draw(undefined, transformCallback)
+                }
+            }
+        }
+    };
+
+    this_.tesselationStyles = {
+        translate: {
             setupAddedPoint(point, prevPoint, nextPoint) {
                 // nothing needed
             },
@@ -263,62 +450,8 @@ function Tesselate(selector, options) {
                     boundPoint.y = boundPoint.originalY + (point.y - point.originalY);
                 }
             },
-            draw: function() {
-                var shapesGroup = this_.element.find('.shapes');
-                svgString = '';
-                for(var i = -4; i <= 4; i++) {
-                    for(var j = -8; j <= 8; j++) {
-                        svgString += this_._drawPolygon(
-                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
-                            this_.verticalSpacing * 2 * j + this_.height / 2
-                        );
-                    }
-                }
-
-                shapesGroup.html(svgString);
-            }
         },
         reflect: {
-            initPoints: function() {
-                for(var i = 0; i < this_.points.length; i = i + 1) {
-                    var point = this_.points[i];
-                    point.boundPoints = []
-                }
-
-                function setupHalf(offset) {
-                    function getOffsetPoint(value) {
-                        return this_.points[(value + offset) % 12];
-                    }
-                    getOffsetPoint(0).boundPoints = [getOffsetPoint(2).tag, getOffsetPoint(10).tag];
-                    getOffsetPoint(0).bindTypes = {};
-                    getOffsetPoint(0).bindTypes[getOffsetPoint(2).tag] = 'inverted';
-                    getOffsetPoint(0).bindTypes[getOffsetPoint(10).tag] = 'inverted';
-
-                    getOffsetPoint(1).boundPoints = [getOffsetPoint(11).tag];
-                    getOffsetPoint(1).bindTypes = {};
-                    getOffsetPoint(1).bindTypes[getOffsetPoint(11).tag] = 'inverted';
-
-                    getOffsetPoint(2).boundPoints = [getOffsetPoint(0).tag, getOffsetPoint(10).tag];
-                    getOffsetPoint(2).bindTypes = {};
-                    getOffsetPoint(2).bindTypes[getOffsetPoint(0).tag] = 'inverted';
-                    getOffsetPoint(2).bindTypes[getOffsetPoint(10).tag] = 'standard';
-
-                    getOffsetPoint(3).boundPoints = [getOffsetPoint(9).tag];
-                    getOffsetPoint(3).bindTypes = {};
-                    getOffsetPoint(3).bindTypes[getOffsetPoint(9).tag] = 'standard';
-
-                    getOffsetPoint(4).boundPoints = [getOffsetPoint(6).tag, getOffsetPoint(8).tag];
-                    getOffsetPoint(4).bindTypes = {};
-                    getOffsetPoint(4).bindTypes[getOffsetPoint(6).tag] = 'inverted';
-                    getOffsetPoint(4).bindTypes[getOffsetPoint(8).tag] = 'standard';
-
-                    getOffsetPoint(5).boundPoints = [getOffsetPoint(7).tag];
-                    getOffsetPoint(5).bindTypes = {};
-                    getOffsetPoint(5).bindTypes[getOffsetPoint(7).tag] = 'inverted';
-                }
-                setupHalf(0);
-                setupHalf(6);
-            },
             setupAddedPoint(point, prevPoint, nextPoint) {
                 point.bindTypes = {};
                 var prevStandard = false;
@@ -344,55 +477,9 @@ function Tesselate(selector, options) {
                     boundPoint.x = boundPoint.originalX + (point.x - point.originalX) * (point.bindTypes[boundPoint.tag] == 'inverted' ? -1 : 1);
                     boundPoint.y = boundPoint.originalY + (point.y - point.originalY);
                 }
-            },
-            draw: function() {
-                var reversePoints = function(point) {
-                    return {
-                        x: -point.x,
-                        y: point.y
-                    };
-                }
-                var shapesGroup = this_.element.find('.shapes');
-                svgString = '';
-                for(var i = -4; i <= 4; i++) {
-                    for(var j = -8; j <= 8; j++) {
-                        svgString += this_._drawPolygon(
-                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
-                            this_.verticalSpacing * 2 * j + this_.height / 2,
-                            j % 2 ? reversePoints : undefined
-                        );
-                    }
-                }
-
-                shapesGroup.html(svgString);
             }
         },
         rotate: {
-            initPoints: function() {
-                function getOffsetPoint(value) {
-                    return this_.points[value % 12];
-                }
-                for(var i = 0 ; i < 12; i=i+4) {
-                    getOffsetPoint(i+0).boundPoints = [getOffsetPoint(i+4).tag, getOffsetPoint(i+8).tag];
-                    getOffsetPoint(i+0).bindRotation = {}
-                    getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+4).tag] = 120;
-                    getOffsetPoint(i+0).bindRotation[getOffsetPoint(i+8).tag] = 240;
-
-                    getOffsetPoint(i+1).boundPoints = [getOffsetPoint(i+3).tag];
-                    getOffsetPoint(i+1).bindRotation = {}
-                    getOffsetPoint(i+1).bindRotation[getOffsetPoint(i+3).tag] = 120;
-
-                    getOffsetPoint(i+2).movable = false;
-                    // used for dynamic point addition
-                    getOffsetPoint(i+2).boundPoints = [getOffsetPoint(i+2).tag, getOffsetPoint(i+6).tag, getOffsetPoint(i+10).tag];
-                    getOffsetPoint(i+2).bindRotation = {}
-
-                    getOffsetPoint(i+3).boundPoints = [getOffsetPoint(i+1).tag];
-                    getOffsetPoint(i+3).bindRotation = {};
-                    getOffsetPoint(i+3).bindRotation[getOffsetPoint(i+1).tag] = 240;
-
-                }
-            },
             setupAddedPoint(point, prevPoint, nextPoint) {
                 var prevRotations = [];
                 for(var key in prevPoint.bindRotation) {
@@ -439,28 +526,11 @@ function Tesselate(selector, options) {
                     boundPoint.x = boundPoint.originalX + xChange;
                     boundPoint.y = boundPoint.originalY + yChange;
                 }
-            },
-            draw: function() {
-                var shapesGroup = this_.element.find('.shapes');
-                svgString = '';
-                for(var i = -4; i <= 4; i++) {
-                    for(var j = -8; j <= 8; j++) {
-                        svgString += this_._drawPolygon(
-                            this_.size * 3 * i + (this_.size + this_.horizontalSpacing * 2) * (j%2) + this_.width / 2,
-                            this_.verticalSpacing * 2 * j + this_.height / 2,
-                            undefined,
-                            undefined,
-                            'rotate('+((j % 3) * 120)+')'
-                        );
-                    }
-                }
-
-                shapesGroup.html(svgString);
             }
         }
     };
 
-    this_.init(options.style);
+    this_.init(options.style, options.shape);
 
     return this_;
 };

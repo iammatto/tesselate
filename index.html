@@ -29,7 +29,7 @@
                         }
                         $('#diff > span').text(currentScore);
                     },
-                    style: 'rotate'
+                    shape: 'hexagon'
                 });
 
                 function updateRandomPoint() {
@@ -77,7 +77,7 @@
     <body>
         <ul id="tesselation-types">
             <li>
-                <input type="radio" name="type" value="translate" id="type-translate">
+                <input type="radio" name="type" value="translate" id="type-translate" checked="checked">
                 <label for="type-translate">Translate</label>
             </li>
             <li>
@@ -85,7 +85,7 @@
                 <label for="type-reflect">Reflect</label>
             </li>
             <li>
-                <input type="radio" name="type" value="rotate" id="type-rotate" checked="checked">
+                <input type="radio" name="type" value="rotate" id="type-rotate">
                 <label for="type-rotate">Rotate</label>
             </li>
         </ul>
